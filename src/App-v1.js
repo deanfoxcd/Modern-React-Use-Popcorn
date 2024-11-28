@@ -54,16 +54,31 @@ const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 export default function App() {
-  const [movies, setMovies] = useState(tempMovieData);
-  const [watched, setWatched] = useState(tempWatchedData);
+  const [movies, setMovies] = useState([]);
+  const [watched, setWatched] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // With async/await (the async function needs to be inside the useEffect function and called immediately. useEffect cannot return anything other than a function)
 
   useEffect(() => {
     async function fetchMovies() {
-      const res = await fetch(`${API_URL}s=interstellar`);
-      const data = await res.json();
-      setMovies(data.Search);
+      try {
+        setIsLoading(true);
+        const res = await fetch(`${API_URL}s=gfdg`);
+
+        if (!res.ok) throw new Error('Something went wrong');
+
+        const data = await res.json();
+
+        if (data.Response === 'False') throw new Error('Movie not found');
+
+        setMovies(data.Search);
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchMovies();
   }, []);
@@ -87,7 +102,10 @@ export default function App() {
 
       <Main>
         <Box>
-          <MovieList movies={movies} />
+          {/* {isLoading ? <Loader /> : <MovieList movies={movies} />} */}
+          {isLoading && <Loader />}
+          {!isLoading && !error && <MovieList movies={movies} />}
+          {error && <ErrorMessage message={error} />}
         </Box>
 
         <Box>
@@ -98,6 +116,19 @@ export default function App() {
     </>
   );
 }
+
+const Loader = () => {
+  return <p className="loader">Loading...</p>;
+};
+
+const ErrorMessage = ({ message }) => {
+  return (
+    <p className="error">
+      <span>❌ </span>
+      {message}
+    </p>
+  );
+};
 
 const Box = ({ children }) => {
   const [isOpen, setIsOpen] = useState(true);
