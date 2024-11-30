@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import StarRating from './StarRating';
 
 const API_KEY = '2bfc8721';
 const API_URL = `http://www.omdbapi.com/?apikey=${API_KEY}&`;
@@ -58,14 +59,24 @@ export default function App() {
   const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [selectedId, setSelectedId] = useState(null);
+
+  const handleSelectMovie = (id) => {
+    setSelectedId((selectedId) => (id === selectedId ? null : id));
+  };
+
+  const handleCloseMovie = () => {
+    setSelectedId(null);
+  };
 
   // With async/await (the async function needs to be inside the useEffect function and called immediately. useEffect cannot return anything other than a function)
-
   useEffect(() => {
     async function fetchMovies() {
       try {
         setIsLoading(true);
-        const res = await fetch(`${API_URL}s=gfdg`);
+        setError('');
+        const res = await fetch(`${API_URL}s=${query}`);
 
         if (!res.ok) throw new Error('Something went wrong');
 
@@ -80,8 +91,14 @@ export default function App() {
         setIsLoading(false);
       }
     }
+
+    if (query.length < 2) {
+      setMovies([]);
+      setError('');
+      return;
+    }
     fetchMovies();
-  }, []);
+  }, [query]);
 
   // With traditional promises
   /*
@@ -96,7 +113,7 @@ export default function App() {
     <>
       <NavBar>
         <Logo />
-        <Search />
+        <Search query={query} setQuery={setQuery} />
         <NumResults movies={movies} />
       </NavBar>
 
@@ -104,13 +121,24 @@ export default function App() {
         <Box>
           {/* {isLoading ? <Loader /> : <MovieList movies={movies} />} */}
           {isLoading && <Loader />}
-          {!isLoading && !error && <MovieList movies={movies} />}
+          {!isLoading && !error && (
+            <MovieList movies={movies} onSelectMovie={handleSelectMovie} />
+          )}
           {error && <ErrorMessage message={error} />}
         </Box>
 
         <Box>
-          <WatchedSummary watched={watched} />
-          <WatchedMovieList watched={watched} />
+          {selectedId ? (
+            <SelectedMovie
+              selectedId={selectedId}
+              onCloseMovie={handleCloseMovie}
+            />
+          ) : (
+            <>
+              <WatchedSummary watched={watched} />
+              <WatchedMovieList watched={watched} />
+            </>
+          )}
         </Box>
       </Main>
     </>
@@ -156,9 +184,7 @@ const Logo = () => {
   );
 };
 
-const Search = () => {
-  const [query, setQuery] = useState('');
-
+const Search = ({ query, setQuery }) => {
   return (
     <input
       className="search"
@@ -182,20 +208,20 @@ const Main = ({ children }) => {
   return <main className="main">{children}</main>;
 };
 
-const MovieList = ({ movies }) => {
+const MovieList = ({ movies, onSelectMovie }) => {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movies?.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID} />
+        <Movie movie={movie} key={movie.imdbID} onSelectMovie={onSelectMovie} />
       ))}
     </ul>
   );
 };
 
 // MovieList
-const Movie = ({ movie }) => {
+const Movie = ({ movie, onSelectMovie }) => {
   return (
-    <li>
+    <li onClick={() => onSelectMovie(movie.imdbID)}>
       <img src={movie.Poster} alt={`${movie.Title} poster`} />
       <h3>{movie.Title}</h3>
       <div>
@@ -205,6 +231,66 @@ const Movie = ({ movie }) => {
         </p>
       </div>
     </li>
+  );
+};
+
+const SelectedMovie = ({ selectedId, onCloseMovie }) => {
+  const [movie, setMovie] = useState({});
+
+  const {
+    Title: title,
+    Year: year,
+    Poster: poster,
+    Runtime: runtime,
+    imdbRating,
+    Plot: plot,
+    Released: released,
+    Actors: actors,
+    Director: director,
+    Genre: genre,
+  } = movie;
+
+  useEffect(() => {
+    async function fetchSelectedMovie() {
+      try {
+        const res = await fetch(`${API_URL}i=${selectedId}`);
+        const data = await res.json();
+        setMovie(data);
+      } catch (err) {}
+    }
+    fetchSelectedMovie();
+  }, [selectedId]);
+
+  return (
+    <div className="details">
+      <header>
+        <button className="btn-back" onClick={onCloseMovie}>
+          &larr;
+        </button>
+        <img src={poster} alt="poster" />
+        <div className="details-overview">
+          <h2>{title}</h2>
+          <p>
+            {released} &bull; {runtime}
+          </p>
+          <p>{genre}</p>
+          <p>
+            <span>⭐️</span>
+            {imdbRating} IMDb rating
+          </p>
+        </div>
+      </header>
+      <section>
+        <div className="rating">
+          <StarRating maxRating={10} size={24} />
+        </div>
+        <p>
+          <em>{plot}</em>
+        </p>
+        <p>Starring {actors}</p>
+        <p>Directed by {director}</p>
+      </section>
+    </div>
   );
 };
 
