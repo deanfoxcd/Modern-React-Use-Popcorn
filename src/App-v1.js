@@ -112,6 +112,7 @@ export default function App() {
       setError('');
       return;
     }
+    handleCloseMovie();
     fetchMovies();
 
     return () => {
@@ -220,10 +221,10 @@ const Search = ({ query, setQuery }) => {
   );
 };
 
-const NumResults = () => {
+const NumResults = ({ movies }) => {
   return (
     <p className="num-results">
-      Found <strong>X</strong> results
+      Found <strong>{movies.length}</strong> results
     </p>
   );
 };
@@ -316,6 +317,20 @@ const SelectedMovie = ({ selectedId, onCloseMovie, onAddWatched, watched }) => {
       document.title = 'usePopcorn';
     };
   }, [title]);
+
+  useEffect(() => {
+    function callback(e) {
+      if (e.code === 'Escape') {
+        onCloseMovie();
+      }
+    }
+
+    document.addEventListener('keydown', callback);
+
+    return () => {
+      document.removeEventListener('keydown', callback);
+    };
+  }, [onCloseMovie]);
 
   return (
     <div className="details">
