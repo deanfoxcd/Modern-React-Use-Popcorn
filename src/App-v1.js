@@ -80,11 +80,15 @@ export default function App() {
 
   // With async/await (the async function needs to be inside the useEffect function and called immediately. useEffect cannot return anything other than a function)
   useEffect(() => {
+    const controller = new AbortController();
+
     async function fetchMovies() {
       try {
         setIsLoading(true);
         setError('');
-        const res = await fetch(`${API_URL}s=${query}`);
+        const res = await fetch(`${API_URL}s=${query}`, {
+          signal: controller.signal,
+        });
 
         if (!res.ok) throw new Error('Something went wrong');
 
@@ -93,8 +97,11 @@ export default function App() {
         if (data.Response === 'False') throw new Error('Movie not found');
 
         setMovies(data.Search);
+        setError('');
       } catch (err) {
-        setError(err.message);
+        if (err.name !== 'AbortError') {
+          setError(err.message);
+        }
       } finally {
         setIsLoading(false);
       }
@@ -106,6 +113,10 @@ export default function App() {
       return;
     }
     fetchMovies();
+
+    return () => {
+      controller.abort();
+    };
   }, [query]);
 
   // With traditional promises
@@ -297,6 +308,15 @@ const SelectedMovie = ({ selectedId, onCloseMovie, onAddWatched, watched }) => {
     fetchSelectedMovie();
   }, [selectedId]);
 
+  useEffect(() => {
+    if (!title) return;
+    document.title = `Movie | ${title}`;
+
+    return () => {
+      document.title = 'usePopcorn';
+    };
+  }, [title]);
+
   return (
     <div className="details">
       {isLoading ? (
@@ -353,7 +373,6 @@ const SelectedMovie = ({ selectedId, onCloseMovie, onAddWatched, watched }) => {
 };
 
 const WatchedSummary = ({ watched }) => {
-  console.log(watched);
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime)).toFixed(2);
