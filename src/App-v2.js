@@ -176,8 +176,20 @@ const Search = ({ query, setQuery }) => {
   const inputEl = useRef(null);
 
   useEffect(() => {
+    const callback = (e) => {
+      console.log(document.activeElement);
+      console.log(inputEl.current);
+      if (document.activeElement === inputEl.current) return;
+
+      if (e.code === 'Enter') {
+        inputEl.current.focus();
+        setQuery('');
+      }
+    };
+    document.addEventListener('keydown', callback);
     inputEl.current.focus();
-  }, []);
+    return () => document.addEventListener('keydown', callback);
+  }, [setQuery]);
 
   return (
     <input
