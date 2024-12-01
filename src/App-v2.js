@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import StarRating from './StarRating';
+import { useMovies } from './useMovies';
 
 const API_KEY = '2bfc8721';
 const API_URL = `http://www.omdbapi.com/?apikey=${API_KEY}&`;
@@ -8,12 +9,10 @@ const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 export default function App() {
-  const [movies, setMovies] = useState([]);
-  // const [watched, setWatched] = useState([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
+
+  useMovies(query);
 
   const [watched, setWatched] = useState(() => {
     const storedValue = localStorage.getItem('watched');
@@ -39,6 +38,7 @@ export default function App() {
   };
 
   // With async/await (the async function needs to be inside the useEffect function and called immediately. useEffect cannot return anything other than a function)
+  /*
   useEffect(() => {
     const controller = new AbortController();
 
@@ -79,6 +79,7 @@ export default function App() {
       controller.abort();
     };
   }, [query]);
+  */
 
   // With traditional promises
   /*
