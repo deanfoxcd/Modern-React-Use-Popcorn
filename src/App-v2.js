@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import StarRating from './StarRating';
 import { useMovies } from './useMovies';
 import useLocalStorageState from './useLocalStorageState';
+import useKey from './useKey';
 
 const API_KEY = '2bfc8721';
 const API_URL = `http://www.omdbapi.com/?apikey=${API_KEY}&`;
@@ -115,19 +116,11 @@ const Logo = () => {
 const Search = ({ query, setQuery }) => {
   const inputEl = useRef(null);
 
-  useEffect(() => {
-    const callback = (e) => {
-      if (document.activeElement === inputEl.current) return;
-
-      if (e.code === 'Enter') {
-        inputEl.current.focus();
-        setQuery('');
-      }
-    };
-    document.addEventListener('keydown', callback);
+  useKey('Enter', () => {
+    if (document.activeElement === inputEl.current) return;
     inputEl.current.focus();
-    return () => document.addEventListener('keydown', callback);
-  }, [setQuery]);
+    setQuery('');
+  });
 
   return (
     <input
@@ -245,19 +238,7 @@ const SelectedMovie = ({ selectedId, onCloseMovie, onAddWatched, watched }) => {
     };
   }, [title]);
 
-  useEffect(() => {
-    function callback(e) {
-      if (e.code === 'Escape') {
-        onCloseMovie();
-      }
-    }
-
-    document.addEventListener('keydown', callback);
-
-    return () => {
-      document.removeEventListener('keydown', callback);
-    };
-  }, [onCloseMovie]);
+  useKey('Escape', onCloseMovie);
 
   return (
     <div className="details">
