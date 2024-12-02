@@ -12,7 +12,7 @@ export default function App() {
   const [query, setQuery] = useState('');
   const [selectedId, setSelectedId] = useState(null);
 
-  useMovies(query);
+  const { movies, isLoading, error } = useMovies(query, handleCloseMovie);
 
   const [watched, setWatched] = useState(() => {
     const storedValue = localStorage.getItem('watched');
@@ -23,9 +23,9 @@ export default function App() {
     setSelectedId((selectedId) => (id === selectedId ? null : id));
   };
 
-  const handleCloseMovie = () => {
+  function handleCloseMovie() {
     setSelectedId(null);
-  };
+  }
 
   const handleAddWatched = (movie) => {
     setWatched((watched) => [...watched, movie]);
@@ -36,59 +36,6 @@ export default function App() {
   const handleDeleteWatched = (id) => {
     setWatched((watched) => watched.filter((movie) => movie.imdbID !== id));
   };
-
-  // With async/await (the async function needs to be inside the useEffect function and called immediately. useEffect cannot return anything other than a function)
-  /*
-  useEffect(() => {
-    const controller = new AbortController();
-
-    async function fetchMovies() {
-      try {
-        setIsLoading(true);
-        setError('');
-        const res = await fetch(`${API_URL}s=${query}`, {
-          signal: controller.signal,
-        });
-
-        if (!res.ok) throw new Error('Something went wrong');
-
-        const data = await res.json();
-
-        if (data.Response === 'False') throw new Error('Movie not found');
-
-        setMovies(data.Search);
-        setError('');
-      } catch (err) {
-        if (err.name !== 'AbortError') {
-          setError(err.message);
-        }
-      } finally {
-        setIsLoading(false);
-      }
-    }
-
-    if (query.length < 2) {
-      setMovies([]);
-      setError('');
-      return;
-    }
-    handleCloseMovie();
-    fetchMovies();
-
-    return () => {
-      controller.abort();
-    };
-  }, [query]);
-  */
-
-  // With traditional promises
-  /*
-  useEffect(() => {
-    fetch(`${API_URL}s=interstellar`)
-      .then((res) => res.json())
-      .then((data) => setMovies(data.Search));
-  }, []);
-  */
 
   useEffect(() => {
     localStorage.setItem('watched', JSON.stringify(watched));
@@ -178,8 +125,6 @@ const Search = ({ query, setQuery }) => {
 
   useEffect(() => {
     const callback = (e) => {
-      console.log(document.activeElement);
-      console.log(inputEl.current);
       if (document.activeElement === inputEl.current) return;
 
       if (e.code === 'Enter') {
